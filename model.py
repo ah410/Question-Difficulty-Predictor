@@ -34,7 +34,7 @@ class DifficultyModel():
         self.model.fit(X, Y)
         self.training_done = True
 
-    def decay_function(self, days_since_last_login):
+    def decay(self, days_since_last_login):
         """
         A decay function.
 
@@ -79,7 +79,7 @@ class DifficultyModel():
             confidence value between 0.00-1.00, quiz score of the last quiz between 0.00-1.00, total
             number of sessions taken].
         """
-        decay_rate = self.decay_function(last_logged_in)
+        decay_rate = self.decay(last_logged_in)
         model_score = self.model.predict(input)
         
         print(f'last logged in: {last_logged_in} | decay rate: {decay_rate} | model score: {model_score}', end='')
