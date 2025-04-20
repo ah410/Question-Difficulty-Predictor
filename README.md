@@ -6,7 +6,7 @@ This project aims to predict a student's readiness to be given harder questions 
 
 - `model.py`: Contains the RandomForestRegressor model, with functions for training, predicting, and calculating a score based on inputs.
 - `data.py`: Provides a function to load and preprocess the student data from a CSV file into a pandas DataFrame.
-- `train_and_run.py`: The script used to train the model, perform predictions, and generate readiness scores based on student data.
+- `train_and_predict.py`: The script used to train the model, perform predictions, and generate readiness scores based on student data.
 
 ## Installation
 
