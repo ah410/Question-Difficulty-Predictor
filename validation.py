@@ -17,19 +17,18 @@ Notes:
 
 from sklearn.model_selection import cross_val_score, GridSearchCV
 from sklearn.ensemble import RandomForestRegressor
-from data import load_student_data
 import matplotlib.pyplot as plt
 
-def k_fold_cross_validation(dataset):
-    X = dataset.drop(columns=['timeSpent', 'readinessScore', 'numberQuestionsAnswered'])
-    Y = dataset['readinessScore']
+def k_fold_cross_validation(student_dataset):
+    X = student_dataset.drop(columns=['timeSpent', 'readinessScore', 'numberQuestionsAnswered'])
+    Y = student_dataset['readinessScore']
 
     # Grid search best parameters found: n_estimators=1000, max_depth=50, min_samples_leaf=1 (DEFAULT), min_samples_split=2 (DEFAULT)
     model = RandomForestRegressor(n_estimators=1000, max_depth=50)
     scores = cross_val_score(model, X, Y, cv=5)
 
     print(f'cross validation scores: {scores}', end='')
-    print(f' | average score: {sum(scores)/len(scores)}')
+    print(f' | average score: {sum(scores)/len(scores)}\n')
 
     plt.figure(figsize=(8,5))
     plt.plot(range(1, len(scores) + 1), scores, marker='o', color='forestgreen')
@@ -49,9 +48,9 @@ def k_fold_cross_validation(dataset):
     plt.show()
 
 
-def grid_search(dataset):
-    X = dataset.drop(columns=['timeSpent', 'readinessScore', 'numberQuestionsAnswered'])
-    Y = dataset['readinessScore']
+def grid_search(student_dataset):
+    X = student_dataset.drop(columns=['timeSpent', 'readinessScore', 'numberQuestionsAnswered'])
+    Y = student_dataset['readinessScore']
 
     model = RandomForestRegressor()
 
@@ -69,8 +68,3 @@ def grid_search(dataset):
     # Print best parameters and score
     print("Best Parameters:", grid_search.best_params_)
     print("Best R² Score:", grid_search.best_score_)
-
-
-if __name__ == "__main__":
-    student_data = load_student_data()
-    k_fold_cross_validation(student_data)

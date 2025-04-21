@@ -82,7 +82,7 @@ class DifficultyModel():
         decay_rate = self.decay(last_logged_in)
         model_score = self.model.predict(input)
         
-        print(f'last logged in: {last_logged_in} | decay rate: {decay_rate} | model score: {model_score}', end='')
+        print(f'decay rate: {decay_rate} | model score: {model_score}', end='')
 
         return model_score * decay_rate
 
@@ -140,4 +140,4 @@ class DifficultyModel():
 
             predicted_score = self.predict_score(x_input, last_logged_in)
 
-            print(f' | predicted score: {predicted_score} | input: {input}')
+            print(f' | predicted score: {predicted_score} | input: {input}\n')

@@ -8,14 +8,11 @@ Steps:
 """
 
 from model import DifficultyModel
-from data import load_student_data
 
-if __name__ == "__main__":
-    student_data_df = load_student_data()
-
+def train_and_predict(student_dataset):
     # Create and train the RandomForestRegression model
     difficulty_model = DifficultyModel()
-    difficulty_model.train(student_data_df)
+    difficulty_model.train(student_dataset)
 
     # Grab some sample data to test the prediction of the model
     columns = ['correctLast3', 'avgTime', 'confidence', 'quizScore', 'sessions', 'lastLoggedIn']
