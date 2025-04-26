@@ -96,11 +96,30 @@ def createRegressionTree(dataset):
     # Have the best label with the threshold that minimizes the sum of squared residuals
     print(f"\n\nlabel: {global_best_label} | threshold: {global_best_threshold}")
     print(f"minimized sum of squared residuals: {global_best_sum_of_squared_residuals}")
+
+    # Create the root node for the regression tree
+    root = TreeNode(rule=f"{global_best_label} < {global_best_threshold}")
         
     # Grab the number of observations for this label's threshold less than and greater than it
+    less_than_datapoints = dataset.query(f'{global_best_label} < {global_best_threshold}')
+    greater_than_datapoints = dataset.query(f'{global_best_label} >= {global_best_threshold}')
 
     # If-Else statements to conditionally check if the number of observations meets the minimum 
-    # number of samples to continue splitting or not. A split will need the dataset to be filtered
+    if len(less_than_datapoints) < min_samples:
+        # Calculate the average target variable value
+        # Set as a leaf node for the left child of root
+        "TODO"
+    else:
+        # Continue splitting the data for the left subtree
+        "TODO"
+    
+    if len(greater_than_datapoints) < min_samples:
+        # Calculate the average target variable value
+        # Set as a leaf node for the right child of root
+        "TODO"
+    else:
+        # Continue splitting the data for the right subtree
+        "TODO"
         
     return ""
 
