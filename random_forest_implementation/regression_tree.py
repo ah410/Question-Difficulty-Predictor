@@ -20,36 +20,37 @@ def createRegressionTree(dataset):
             # For all datapoints greater than the average of both rows:
                 # Compute a squared residual for that datapoint | squared residual = (actual target variable - right_average)^2
                 # Add it to the current sum of squared residuals variable
-        # Compare the sum of squared residuals with the current best. If less than, replace. Else, keep the same.
-    
+        # Compare the sum of squared residuals with the current best. If less than, replace and update best_threshold and best_sum_of_squared_residuals. Else, keep the same.
     # Now you have the best column. Make it the root node, passing in the appropriate rule in the node creation
-    # Remove that column from the dataset
     # If number of observations less than the threshold is less than min_samples
         # Calculate average prediction
         # Create leaf node with the average prediction
     # Else:
         # Continue splitting with the updated dataset (Recursive Partitioning)
+        # Updated dataset will include all labels, but the rows will be filtered to only include rows where the best label has values less than threshold
 
     # If number of observations greater than the threshold is less than min_samples
         # Calculate average prediction
         # Create leaf node with the average prediction
     # Else:
         # Continue splitting with the updated dataset. (Recursive Partitioning)
+        # Updated dataset will include all labels, but the rows will be filtered to only include rows where the best label has values greater than threshold
+
 
     # Test dataset on simple data, will convert to student dataset after regression trees are confirmed working
     labels = ['Age', 'Dosage']
     min_samples = 5
-    best_column = {}
+    global_best_sum_of_squared_residuals = float('inf')
+    global_best_threshold = None
+    global_best_label = None
 
-    # Loop over all labels that determine the target variable
     for label in labels:
         current_subset = dataset[[label, 'Effectiveness']].sort_values(label)
-        best_threshold = None
-        best_sum_of_squared_residuals = float('inf')
+        label_best_sum_of_squared_residuals = float('inf')
+        label_best_threshold = None
 
         # Loop over all rows
         for i in range(len(current_subset) - 1):
-            current_sum_of_squared_residuals = float('inf')
             row = current_subset.iloc[i]
             next_row = current_subset.iloc[i+1]
 
@@ -61,10 +62,8 @@ def createRegressionTree(dataset):
             left_average = less_than.mean()['Effectiveness']
             less_than['squared_residual'] = less_than.apply(lambda row: pow(row['Effectiveness'] - left_average, 2), axis=1)
 
-            print("current threshold value: ", current_threshold)
+            print(f"current threshold value for {label}: ", current_threshold)
             print(f"observations less than threshold: {len(less_than)}")
-            print(f"left average dose effectiveness: {left_average}")
-
 
             # Get list of all labels greater than threshold, compute rightAverage for effectiveness
             # For rightAverage effectiveness, find the squared residual for each datapoint, where the predicted effectiveness is the rightAveraverage effectiveness computed above
@@ -73,23 +72,36 @@ def createRegressionTree(dataset):
             greater_than['squared_residual'] = greater_than.apply(lambda row: pow(row['Effectiveness'] - right_average, 2), axis=1)
 
             print(f"observations greater than threshold: {len(greater_than)}")
+            print(f"left average dose effectiveness: {left_average}")
             print(f"right average dose effectiveness: {right_average}")
 
-            print(less_than.head(1))
-            print(greater_than.head(1))
-            print()
+            print(less_than.head(10))
+            print(greater_than.head(10))
 
-            # Add up all squared residuals to get one final number. This is the number you want to minimize.
+            # The current threshold's sum of squared residuals for this label.
+            current_sum_of_squared_residuals = less_than.sum()['squared_residual'] + greater_than.mean()['squared_residual']
+            print(f'current sum of squared residuals {current_sum_of_squared_residuals}\n')
 
-            # Check if this sum of squared residuals is better than the current best, replace if so. Else, bestThreshold stays the same.
+            # Update the current labels threshold value that minimizes the sum of squared residuals
+            if current_sum_of_squared_residuals < label_best_sum_of_squared_residuals:
+                label_best_sum_of_squared_residuals = current_sum_of_squared_residuals
+                label_best_threshold = current_threshold
+
+        # Found the best threshold for this label. Compare against the best label found so far.
+        if label_best_sum_of_squared_residuals < global_best_sum_of_squared_residuals:
+            global_best_sum_of_squared_residuals = label_best_sum_of_squared_residuals
+            global_best_threshold = label_best_threshold
+            global_best_label = label
         
-        # Found the bestThreshold for this column. Create your node and add the rule
+    # Have the best label with the threshold that minimizes the sum of squared residuals
+    print(f"\n\nlabel: {global_best_label} | threshold: {global_best_threshold}")
+    print(f"minimized sum of squared residuals: {global_best_sum_of_squared_residuals}")
+        
+    # Grab the number of observations for this label's threshold less than and greater than it
 
-        # If the number of observations for less than and greater than the threshold are more than min_samples, continue splitting. Else, stop splitting
-            # Likely be some recursion implementation. Continue calling this function, passing in the reduced dataset you need. returns a Node for your regression tree with children
-
-    # Need to find out which column has the lowest sum of squared residuals. that will be the root node.
-
+    # If-Else statements to conditionally check if the number of observations meets the minimum 
+    # number of samples to continue splitting or not. A split will need the dataset to be filtered
+        
     return ""
 
 
