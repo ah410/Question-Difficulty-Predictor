@@ -37,33 +37,51 @@ def createRegressionTree(dataset):
         # Continue splitting with the updated dataset. (Recursive Partitioning)
 
     # Test dataset on simple data, will convert to student dataset after regression trees are confirmed working
-    inputs = ['Age', 'Sex', 'Dosage']
+    labels = ['Age', 'Dosage']
     min_samples = 5
+    best_column = {}
 
-    # Loop over all columns
-    for input in inputs:
-        current_subset = dataset[[input, 'Effectiveness']].sort_values(input)
+    # Loop over all labels that determine the target variable
+    for label in labels:
+        current_subset = dataset[[label, 'Effectiveness']].sort_values(label)
         best_threshold = None
+        best_sum_of_squared_residuals = float('inf')
 
         # Loop over all rows
         for i in range(len(current_subset) - 1):
-            sum_of_squared_residuals = 0
+            current_sum_of_squared_residuals = float('inf')
             row = current_subset.iloc[i]
             next_row = current_subset.iloc[i+1]
 
-            # Find all thresholds
-            if input != 'Sex': # Skip sex for now, just focusing on continuous numbers
-                current_threshold = (row[input] + next_row[input]) / 2
+            current_threshold = (row[label] + next_row[label]) / 2
 
-                # Get list of all inputs less than threshold, compute leftAverage for effectiveness
-                # For leftAverage effectiveness, find the squared residual for each datapoint, where the predicted effectiveness is the leftAverage effectiveness computed above
+            # Get list of all labels less than threshold, compute leftAverage for effectiveness
+            # For leftAverage effectiveness, find the squared residual for each datapoint, where the predicted effectiveness is the leftAverage effectiveness computed above
+            less_than = current_subset.query(f'{label} < {current_threshold}').copy()
+            left_average = less_than.mean()['Effectiveness']
+            less_than['squared_residual'] = less_than.apply(lambda row: pow(row['Effectiveness'] - left_average, 2), axis=1)
 
-                # Get list of all inputs greater than threshold, compute rightAverage for effectiveness
-                # For rightAverage effectiveness, find the squared residual for each datapoint, where the predicted effectiveness is the rightAveraverage effectiveness computed above
-                
-                # Add up all squared residuals to get one final number. This is the number you want to minimize.
+            print("current threshold value: ", current_threshold)
+            print(f"observations less than threshold: {len(less_than)}")
+            print(f"left average dose effectiveness: {left_average}")
 
-                # Check if this sum of squared residuals is better than the current best, replace if so. Else, bestThreshold stays the same.
+
+            # Get list of all labels greater than threshold, compute rightAverage for effectiveness
+            # For rightAverage effectiveness, find the squared residual for each datapoint, where the predicted effectiveness is the rightAveraverage effectiveness computed above
+            greater_than = current_subset.query(f'{label} >= {current_threshold}').copy()
+            right_average = greater_than.mean()['Effectiveness']
+            greater_than['squared_residual'] = greater_than.apply(lambda row: pow(row['Effectiveness'] - right_average, 2), axis=1)
+
+            print(f"observations greater than threshold: {len(greater_than)}")
+            print(f"right average dose effectiveness: {right_average}")
+
+            print(less_than.head(1))
+            print(greater_than.head(1))
+            print()
+
+            # Add up all squared residuals to get one final number. This is the number you want to minimize.
+
+            # Check if this sum of squared residuals is better than the current best, replace if so. Else, bestThreshold stays the same.
         
         # Found the bestThreshold for this column. Create your node and add the rule
 
@@ -73,3 +91,7 @@ def createRegressionTree(dataset):
     # Need to find out which column has the lowest sum of squared residuals. that will be the root node.
 
     return ""
+
+
+dataset = pd.read_csv('./dataset/dosage_effectiveness.csv')
+createRegressionTree(dataset)
