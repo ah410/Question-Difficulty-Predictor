@@ -36,4 +36,40 @@ def createRegressionTree(dataset):
     # Else:
         # Continue splitting with the updated dataset. (Recursive Partitioning)
 
+    # Test dataset on simple data, will convert to student dataset after regression trees are confirmed working
+    inputs = ['Age', 'Sex', 'Dosage']
+    min_samples = 5
+
+    # Loop over all columns
+    for input in inputs:
+        current_subset = dataset[[input, 'Effectiveness']].sort_values(input)
+        best_threshold = None
+
+        # Loop over all rows
+        for i in range(len(current_subset) - 1):
+            sum_of_squared_residuals = 0
+            row = current_subset.iloc[i]
+            next_row = current_subset.iloc[i+1]
+
+            # Find all thresholds
+            if input != 'Sex': # Skip sex for now, just focusing on continuous numbers
+                current_threshold = (row[input] + next_row[input]) / 2
+
+                # Get list of all inputs less than threshold, compute leftAverage for effectiveness
+                # For leftAverage effectiveness, find the squared residual for each datapoint, where the predicted effectiveness is the leftAverage effectiveness computed above
+
+                # Get list of all inputs greater than threshold, compute rightAverage for effectiveness
+                # For rightAverage effectiveness, find the squared residual for each datapoint, where the predicted effectiveness is the rightAveraverage effectiveness computed above
+                
+                # Add up all squared residuals to get one final number. This is the number you want to minimize.
+
+                # Check if this sum of squared residuals is better than the current best, replace if so. Else, bestThreshold stays the same.
+        
+        # Found the bestThreshold for this column. Create your node and add the rule
+
+        # If the number of observations for less than and greater than the threshold are more than min_samples, continue splitting. Else, stop splitting
+            # Likely be some recursion implementation. Continue calling this function, passing in the reduced dataset you need. returns a Node for your regression tree with children
+
+    # Need to find out which column has the lowest sum of squared residuals. that will be the root node.
+
     return ""
