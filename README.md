@@ -14,3 +14,11 @@ This project aims to predict a student's readiness to be given harder questions 
    ```bash
    git clone https://github.com/ah410/question_difficulty_predictor.git
    cd question_difficulty_predictor
+
+## Todo
+
+1. Update README.md
+    - add new files and folder descriptions to project structure
+    - new section containing references
+2. Refactor directory structure
+    - follow best practices
