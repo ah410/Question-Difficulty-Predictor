@@ -1,7 +1,7 @@
 from tree_node import TreeNode
 import pandas as pd
 
-def createRegressionTree(dataset):
+def regression_tree(dataset):
     # Test dataset on simple data, will convert to student dataset after regression trees are confirmed working
     labels = ['Age', 'Dosage']
     min_samples = 5
@@ -64,7 +64,7 @@ def createRegressionTree(dataset):
         root.left = left_child
     else:
         # Continue splitting the data for the left subtree
-        root.left = createRegressionTree(less_than_datapoints)
+        root.left = regression_tree(less_than_datapoints)
     
     if len(greater_than_datapoints) < min_samples:
         # Calculate the average target variable value
@@ -75,7 +75,7 @@ def createRegressionTree(dataset):
         root.right = right_child
     else:
         # Continue splitting the data for the right subtree
-        root.right = createRegressionTree(greater_than_datapoints)
+        root.right = regression_tree(greater_than_datapoints)
         
     return root
 
@@ -90,5 +90,5 @@ def print_bst(node, level=0):
         print_bst(node.right, level + 1)
 
 dataset = pd.read_csv('./dataset/dosage_effectiveness.csv')
-root_node = createRegressionTree(dataset)
+root_node = regression_tree(dataset)
 print_bst(root_node)
