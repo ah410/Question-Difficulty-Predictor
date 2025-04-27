@@ -1,7 +1,9 @@
 from regression_tree import regression_tree
+from bootstrap_sampling import bootstrap_sampling
 
 class RandomForestRegressor:
     def __init__(self, min_samples, n_estimators):
+        self.forest = []
         self.min_samples = min_samples
         self.n_estimators = n_estimators
     
@@ -10,7 +12,12 @@ class RandomForestRegressor:
             # a. Create a bootstrapped dataset
             # b. Create a regression tree on that bootstrapped dataset
             # c. Save the regression tree in a forest (data structure for the trees)
-        ...
+        for i in range(self.n_estimators):
+            bootstrapped_dataset = bootstrap_sampling(dataset)
+            reg_tree_root = regression_tree(bootstrapped_dataset)
+            self.forest.append(reg_tree_root)
+        
+        return None
 
     def predict(self, inputs):
         # 1. Initialize an empty predicted_scores list
