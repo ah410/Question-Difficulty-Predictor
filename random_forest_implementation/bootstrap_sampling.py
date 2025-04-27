@@ -18,9 +18,3 @@ def bootstrap_sampling(dataset):
 
     # 5. Return that dataframe
     return bootstrapped_dataset
-
-dataset = pd.read_csv('./dataset/dosage_effectiveness.csv')
-bootstrapped_dataset = bootstrap_sampling(dataset)
-
-print(dataset.head(5))
-print(bootstrapped_dataset.head(5))

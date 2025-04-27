@@ -13,11 +13,17 @@ import math
 import time
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
+from random_forest_implementation.RandomForestRegressor import RandomForestRegressor2
 
 class DifficultyModel():
-    def __init__(self):
-        self.model = RandomForestRegressor(n_estimators=100, max_depth=10)
+    def __init__(self, implementation_type):
+        if implementation_type == "sklearn_implementation":
+            self.model = RandomForestRegressor(n_estimators=100, max_depth=10)
+        else:
+            self.model = RandomForestRegressor2(n_estimators=5, min_samples=5, max_depth=10)
+
         self.training_done = False
+        self.implementation_type = implementation_type
 
     def train(self, df):
         """
@@ -28,10 +34,15 @@ class DifficultyModel():
         df : pandas.DataFrame 
             A DataFrame containing the features [correctLast3, avgTime, confidence, quizScore, sessions].
         """
-        X = df.drop(columns=['timeSpent', 'readinessScore', 'numberQuestionsAnswered'])
-        Y = df['readinessScore']
+        if self.implementation_type == "sklearn_implementation":
+            X = df.drop(columns=['timeSpent', 'readinessScore', 'numberQuestionsAnswered'])
+            Y = df['readinessScore']
 
-        self.model.fit(X, Y)
+            self.model.fit(X, Y)
+        else:
+            X = df.drop(columns=['timeSpent', 'numberQuestionsAnswered'])
+            self.model.fit(X)
+
         self.training_done = True
 
     def decay(self, days_since_last_login):
@@ -111,7 +122,7 @@ class DifficultyModel():
         except ValueError as e:
             print(f'Invalid predicted score: {e}')
 
-    def listen_for_training(self, columns, inputs):
+    def listen_for_training(self, columns, test_stats):
         """
         A listener function.
 
@@ -134,10 +145,10 @@ class DifficultyModel():
             print('Model still training...')
             time.sleep(1)
         
-        for input in inputs:
-            last_logged_in = input[-1]
-            x_input = pd.DataFrame([input], columns=columns).drop(columns=['lastLoggedIn'])
+        for row in test_stats:
+            last_logged_in = row[-1]
+            x_input = pd.DataFrame([row], columns=columns).drop(columns=['lastLoggedIn'])
 
             predicted_score = self.predict_score(x_input, last_logged_in)
 
-            print(f' | predicted score: {predicted_score} | input: {input}\n')
+            print(f' | predicted score: {predicted_score} | input_row: {row}\n')

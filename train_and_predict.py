@@ -9,9 +9,9 @@ Steps:
 
 from model import DifficultyModel
 
-def train_and_predict(student_dataset):
+def train_and_predict(student_dataset, implementation_type):
     # Create and train the RandomForestRegression model
-    difficulty_model = DifficultyModel()
+    difficulty_model = DifficultyModel(implementation_type)
     difficulty_model.train(student_dataset)
 
     # Grab some sample data to test the prediction of the model
