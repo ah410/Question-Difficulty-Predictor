@@ -40,9 +40,17 @@ public class RandomForestRegressor {
     }
     public float decay(int daysSinceLastLoggedIn) {
         // 1. If parameter is >= 30, return 0.10
+        if (daysSinceLastLoggedIn >= 30) {
+            return 0.10f;
+        }
         // 2. Else If parameter btwn [3,30], return 1 - log_base_10(parameter) + 0.477
+        else if (daysSinceLastLoggedIn > 3) {
+            return (float) (1 - Math.log10(daysSinceLastLoggedIn) + 0.477);
+        } 
         // 3. Else, return 1.00 (no decay)
-        return 0.0f;
+        else {
+            return 1.00f;
+        }
     }
     public TreeNode createRegressionTree(DataFrame df, int minSamples, int maxDepth, int currentDepth) {
         // 1. Grab the labels that determine the target variable and the target label itself
