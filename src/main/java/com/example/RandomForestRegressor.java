@@ -2,22 +2,23 @@ package com.example;
 
 import java.util.ArrayList;
 import java.util.List;
-import smile.data.DataFrame;
-import smile.util.Index;
+import java.util.OptionalDouble;
 
-import com.example.TreeNode;
+import smile.data.DataFrame;
+import smile.data.vector.ValueVector;
+import smile.util.Index;
 
 public class RandomForestRegressor {
     // Attributes
-    int nEstimators;
+    int nEstimator;
     int minSamples;
     int maxDepth;
     boolean isTrained;
     List<TreeNode> forest;
 
     // Constructor
-    public RandomForestRegressor(int nEstimators, int minSamples, int maxDepth) {
-        this.nEstimators = nEstimators;
+    public RandomForestRegressor(int nEstimator, int minSamples, int maxDepth) {
+        this.nEstimator = nEstimator;
         this.minSamples = minSamples;
         this.maxDepth = maxDepth;
         this.isTrained = false;
@@ -25,18 +26,50 @@ public class RandomForestRegressor {
 
     // Methods
     public void fit(DataFrame df) {
-        // Loop over the amount of nEstimators
-            // a. Create a bootstrapped dataset, calling bootstrapSample()
-            // b. Create a regression tree on that dataset, calling createRegressionTree()
-            // c. Save the regression tree in the forest
+        // Create nEstimator trees where each tree is trained on a bootstrapped dataset with replacement
+        for (int i = 0; i < nEstimator; i++) {
+            DataFrame bootstrappedDf = bootstrapSample(df);
+            TreeNode root = createRegressionTree(bootstrappedDf, minSamples, maxDepth, 0);
+            forest.add(root);
+        }
     }
     public float predict(DataFrame df) {
         // 1. Initialize an empty predictedScores list
+        List<Float> predictedScores = new ArrayList<>();
+
         // 2. Loop over every regression tree in the forest
+        for (TreeNode node : forest) {
+            TreeNode current = node;
             // a. While you haven't reached a leaf node, continue traversing the regression tree
+            while (!"".equals(current.getRule())) {
+                // current.rule syntax: "label < value"
+                String[] ruleSplit = current.getRule().split(" ");
+                String ruleLabel = ruleSplit[0];
+                String ruleValue = ruleSplit[2];
+
+                ValueVector columns = df.column(ruleLabel);
+                float inputValue = columns.getFloat(0);
+                
+                if (inputValue < Float.parseFloat(ruleValue) && current.getLeftChild() != null) {
+                    current = current.getLeftChild();
+                } 
+                else if (inputValue >= Float.parseFloat(ruleValue) && current.getRightChild() != null) {
+                    current = current.getRightChild();
+                }
+            }
+
             // b. Once a leaf node is reached, add its value to the predictedScores list
+            predictedScores.add(current.getPrediction());
+        }
+        
         // 3. Grab the average of all predicted scores and return it
-        return 0.0f;
+        OptionalDouble average = predictedScores.stream().mapToDouble(Float::doubleValue).average();
+
+        if (average.isPresent()) {
+            return (float) average.getAsDouble();
+        } else {
+            return 0.0f;
+        }
     }
     public float decay(int daysSinceLastLoggedIn) {
         // 1. If parameter is >= 30, return 0.10

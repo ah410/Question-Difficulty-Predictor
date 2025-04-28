@@ -1,7 +1,6 @@
 package com.example;
 import smile.data.DataFrame;
 import smile.io.Read;
-import com.example.RandomForestRegressor;
 
 public class Main {
     public static void main(String[] args) {
