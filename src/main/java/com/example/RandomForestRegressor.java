@@ -1,7 +1,10 @@
 package com.example;
 
+import java.util.ArrayList;
 import java.util.List;
 import smile.data.DataFrame;
+import smile.util.Index;
+
 import com.example.TreeNode;
 
 public class RandomForestRegressor {
@@ -69,15 +72,24 @@ public class RandomForestRegressor {
     }
     public DataFrame bootstrapSample(DataFrame df) {
         // 1. Grab the number of rows, n
+        int n = df.nrow();
 
         // 2. Make an empty list to store random indices to be part of the bootstrapped dataset
+        List<Integer> randomIndices = new ArrayList<>();
 
         // 3. Loop n times
             // a. Generate a random index, add to the list of indices
+        for (int i = 0; i < n; i++) {
+            int randomIndex = (int) (Math.random() * n); 
+            randomIndices.add((randomIndex));
+        }
 
         // 4. Create a new DataFrame passing in the list of random indices
+        int[] indicesArray = randomIndices.stream().mapToInt(Integer::intValue).toArray();
+        Index index = Index.of(indicesArray);
+        DataFrame newDf = df.apply(index);
 
         // 5. Return that dataframe
-        return DataFrame.of(new int[][]{{0,0}, {0,0}});
+        return newDf;
     }
 }
