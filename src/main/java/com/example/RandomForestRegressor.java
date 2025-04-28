@@ -26,9 +26,12 @@ public class RandomForestRegressor {
 
     // Methods
     public void fit(DataFrame df) {
-        // Create nEstimator trees where each tree is trained on a bootstrapped dataset with replacement
+        // 1. Filter DataFrame to only grab the columns ["correctLast3","avgTime","confidence","quizScore","sessions","readinessScore"]
+        DataFrame filteredDf = df.apply("correctLast3","avgTime","confidence","quizScore","sessions","readinessScore");       
+
+        // 2. Create nEstimator trees where each tree is trained on a bootstrapped dataset with replacement
         for (int i = 0; i < nEstimator; i++) {
-            DataFrame bootstrappedDf = bootstrapSample(df);
+            DataFrame bootstrappedDf = bootstrapSample(filteredDf);
             TreeNode root = createRegressionTree(bootstrappedDf, minSamples, maxDepth, 0);
             forest.add(root);
         }
