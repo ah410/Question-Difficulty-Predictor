@@ -131,12 +131,12 @@ public class RandomForestRegressor {
                     .collect(Collectors.toDataFrame((df.schema())));
 
                 // Grab the average target variable value for both DataFrames above
-                ValueVector leftVals = lessThanDf.apply("readinessScore");
+                ValueVector leftVals = lessThanDf.apply(targetLabel);
                 float leftAverage = 0.0f;
                 for (int j = 0; j < leftVals.size(); j++) {
                     leftAverage +=  leftVals.getFloat(j);
                 }
-                ValueVector rightVals = greaterThanDf.apply("readinessScore");
+                ValueVector rightVals = greaterThanDf.apply(targetLabel);
                 float rightAverage = 0.0f;
                 for (int j = 0; j < rightVals.size(); j++) {
                     rightAverage +=  rightVals.getFloat(j);
@@ -187,23 +187,40 @@ public class RandomForestRegressor {
         DataFrame lessThanDf = df.stream()
             .filter(row -> row.getFloat(splitLabel) < splitThreshold)
             .collect(Collectors.toDataFrame(df.schema()));
+        ValueVector lessThanVector = lessThanDf.apply(targetLabel);
+
         DataFrame greaterThanDf = df.stream()
             .filter(row -> row.getFloat(splitLabel) >= splitThreshold)
             .collect(Collectors.toDataFrame(df.schema()));
+        ValueVector greaterThanVector = greaterThanDf.apply(targetLabel);
 
         // 6. Conditionally check to crete a leaf node or continue splitting based on maxDepth and minSamples
         if (lessThanDf.size() < minSamples || currentDepth >= maxDepth) {
-            // TODO
             // Average prediction
+            float averagePrediction = 0.0f;
+            for (Double val : lessThanVector.toDoubleArray()) {
+                averagePrediction += val.floatValue();
+            }
+            averagePrediction = averagePrediction / lessThanVector.size();
+
             // Create a left leaf node
+            TreeNode leftLeafNode = new TreeNode(averagePrediction);
+            root.setLeftChild(leftLeafNode);
         } else {
             // Continue splitting to create the left sub-tree
             root.setLeftChild(createRegressionTree(lessThanDf, minSamples, maxDepth, currentDepth + 1));
         }
         if (greaterThanDf.size() < minSamples || currentDepth >= maxDepth) {
-            // TODO
             // Average prediction
+            float averagePrediction = 0.0f;
+            for (Double val : greaterThanVector.toDoubleArray()) {
+                averagePrediction += val.floatValue();
+            }
+            averagePrediction = averagePrediction / greaterThanVector.size();
+
             // Create a right leaf node
+            TreeNode rightLeafNode = new TreeNode(averagePrediction);
+            root.setRightChild(rightLeafNode);
         } else {
             // Continue splitting to create the right sub-tree
             root.setRightChild(createRegressionTree(greaterThanDf, minSamples, maxDepth, currentDepth + 1));
@@ -229,9 +246,9 @@ public class RandomForestRegressor {
         // 4. Create a new DataFrame passing in the list of random indices
         int[] indicesArray = randomIndices.stream().mapToInt(Integer::intValue).toArray();
         Index index = Index.of(indicesArray);
-        DataFrame newDf = df.apply(index);
+        DataFrame bootstrappedDf = df.apply(index);
 
         // 5. Return that dataframe
-        return newDf;
+        return bootstrappedDf;
     }
 }
