@@ -94,7 +94,7 @@ public class RandomForestRegressor {
     public TreeNode createRegressionTree(DataFrame df, int minSamples, int maxDepth, int currentDepth) {
         // 1. Grab the labels that determine the target variable and the target label itself
         String[] colNames = df.names();
-        String targetLabel = colNames[-1];
+        String targetLabel = colNames[colNames.length - 1];
 
         // 2. Keep track of the best label, its threshold, and its SSR (sum of squared residuals)
         String globalBestLabel = "";
@@ -141,8 +141,10 @@ public class RandomForestRegressor {
                 for (int j = 0; j < rightVals.size(); j++) {
                     rightAverage +=  rightVals.getFloat(j);
                 }
-                leftAverage = leftAverage / leftVals.size();
-                rightAverage = rightAverage / rightVals.size();
+                
+                // Handle potential for there to be 0 values to the left or right of the threshold
+                leftAverage = leftVals.size() == 0 ? 0 : leftAverage / leftVals.size();
+                rightAverage = rightVals.size() == 0 ? 0 : rightAverage / rightVals.size();
 
                 // Calculate the squared residual for all datapoints
                 List<Float> leftResiduals = new ArrayList<>();
@@ -201,7 +203,7 @@ public class RandomForestRegressor {
             for (Double val : lessThanVector.toDoubleArray()) {
                 averagePrediction += val.floatValue();
             }
-            averagePrediction = averagePrediction / lessThanVector.size();
+            averagePrediction = lessThanVector.size() == 0 ? 0 : averagePrediction / lessThanVector.size();
 
             // Create a left leaf node
             TreeNode leftLeafNode = new TreeNode(averagePrediction);
@@ -216,7 +218,7 @@ public class RandomForestRegressor {
             for (Double val : greaterThanVector.toDoubleArray()) {
                 averagePrediction += val.floatValue();
             }
-            averagePrediction = averagePrediction / greaterThanVector.size();
+            averagePrediction = greaterThanVector.size() == 0 ? 0 : averagePrediction / greaterThanVector.size();
 
             // Create a right leaf node
             TreeNode rightLeafNode = new TreeNode(averagePrediction);
