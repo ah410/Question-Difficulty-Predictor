@@ -103,7 +103,8 @@ public class RandomForestRegressor {
 
         // 3. Loop over every label (excluding target label)
             // a. Keep track of this labels best threshold and its SSR
-            // b. Loop over all rows of the dataframe
+            // b. Sort the values of the DataFrame according to the current label
+            // c. Loop over all rows of the DataFrame
                 // i. Grab current and next row
                 // ii. Calculate current threshold (average of both rows for current label)
                 // iii. Filter the dataset, grabbing all rows whose current label is less than current threshold
@@ -112,23 +113,29 @@ public class RandomForestRegressor {
                 // vi. repeate steps iii-v for rows whose current label is greater than or equal to the current threshold
                 // vii. sum left and right squared residuals from the threshold into a combined sum
                 // vii. update label best threshold if it has a SSR lower than the current best threshold
-            // c. update global best label if this current label has a lower SSR value
+            // d. update global best label if this current label has a lower SSR value
         for (String label : colNames) {
             float labelBestThreshold = Float.POSITIVE_INFINITY;
             float labelBestSSR = Float.POSITIVE_INFINITY; 
 
-            for (int i = 0; i < df.nrow() - 1; i++) {
-                Tuple currentRow = df.apply(i);
-                Tuple nextRow = df.apply(i+1);
+            // Sort the values of the DataFrame for the current label
+            DataFrame sortedDf = df.stream()
+                .sorted((row1, row2) -> Float.compare(row1.getFloat(label), row2.getFloat(label)))
+                .collect(Collectors.toDataFrame(df.schema()));
+
+            for (int i = 0; i < sortedDf.nrow() - 1; i++) {
+                Tuple currentRow = sortedDf.apply(i);
+                Tuple nextRow = sortedDf.apply(i+1);
                 float currentThreshold = (currentRow.getFloat(label) + nextRow.getFloat(label)) / 2;
 
                 // select rows in a DataFrame where the value of label is < currentThreshold and >= currentThreshold
-                DataFrame lessThanDf = df.stream()
+                DataFrame lessThanDf = sortedDf.stream()
                     .filter(row -> row.getFloat(label) < currentThreshold)
                     .collect(Collectors.toDataFrame(df.schema()));
-                DataFrame greaterThanDf = df.stream()
+
+                DataFrame greaterThanDf = sortedDf.stream()
                     .filter(row -> row.getFloat(label) >= currentThreshold)
-                    .collect(Collectors.toDataFrame((df.schema())));
+                    .collect(Collectors.toDataFrame((sortedDf.schema())));
 
                 // Grab the average target variable value for both DataFrames above
                 ValueVector leftVals = lessThanDf.apply(targetLabel);
