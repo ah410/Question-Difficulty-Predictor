@@ -159,8 +159,8 @@ public class RandomForestRegressor {
                 }
 
                 // Calculate the combined SSR by adding the left and right SSR's
-                float leftSSR = (float) leftResiduals.stream().mapToDouble(Float::doubleValue).average().getAsDouble();
-                float rightSSR = (float) rightResiduals.stream().mapToDouble(Float::doubleValue).average().getAsDouble();
+                float leftSSR = (float) leftResiduals.stream().mapToDouble(Float::doubleValue).sum();
+                float rightSSR = (float) rightResiduals.stream().mapToDouble(Float::doubleValue).sum();
                 float combinedSSR = leftSSR + rightSSR;
 
                 // If this SSR is < current labels best, update labels best
