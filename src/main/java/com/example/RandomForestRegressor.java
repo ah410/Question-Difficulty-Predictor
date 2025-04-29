@@ -92,9 +92,13 @@ public class RandomForestRegressor {
         }
     }
     public TreeNode createRegressionTree(DataFrame df, int minSamples, int maxDepth, int currentDepth) {
-        // 1. Grab the labels that determine the target variable and the target label itself
+        // 1. Grab all column names (features and target) and extract target label
         String[] colNames = df.names();
         String targetLabel = colNames[colNames.length - 1];
+
+        // Remove the target label to create an array of just features
+        String[] features = new String[colNames.length - 1];
+        System.arraycopy(colNames, 0, features, 0, colNames.length - 1);
 
         // 2. Keep track of the best label, its threshold, and its SSR (sum of squared residuals)
         String globalBestLabel = "";
@@ -114,7 +118,7 @@ public class RandomForestRegressor {
                 // vii. sum left and right squared residuals from the threshold into a combined sum
                 // vii. update label best threshold if it has a SSR lower than the current best threshold
             // d. update global best label if this current label has a lower SSR value
-        for (String label : colNames) {
+        for (String label : features) {
             float labelBestThreshold = Float.POSITIVE_INFINITY;
             float labelBestSSR = Float.POSITIVE_INFINITY; 
 
