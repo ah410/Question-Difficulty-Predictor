@@ -323,4 +323,18 @@ public class RandomForestRegressor implements Serializable {
         // 5. Return that dataframe
         return bootstrappedDf;
     }
+
+    // Getters
+    public int getNestimators() {
+        return nEstimator;
+    }
+    public int getMinSamples() {
+        return minSamples;
+    }
+    public int getMaxDepth() {
+        return maxDepth;
+    }
+    public List<TreeNode> getForest() {
+        return forest;
+    }
 }
