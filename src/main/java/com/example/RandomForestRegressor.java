@@ -1,7 +1,9 @@
 package com.example;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.stream.Stream;
 
@@ -37,12 +39,11 @@ public class RandomForestRegressor {
         for (int i = 0; i < nEstimator; i++) {
             DataFrame bootstrappedDf = bootstrapSample(filteredDf);
             TreeNode root = createRegressionTree(bootstrappedDf, minSamples, maxDepth, 0);
-            System.out.println("Root Node for index " + i + ": " + root.getRule());
             forest.add(root);
         }
     }
-    public float predict(DataFrame df) {
-        // 1. Initialize an empty predictedScores list
+    public float predict(Row row) {
+        // 1. Initialize an empty predictedScores list to store each regression trees score
         List<Float> predictedScores = new ArrayList<>();
 
         // 2. Loop over every regression tree in the forest
@@ -55,14 +56,16 @@ public class RandomForestRegressor {
                 String ruleLabel = ruleSplit[0];
                 String ruleValue = ruleSplit[2];
 
-                ValueVector columns = df.column(ruleLabel);
-                float inputValue = columns.getFloat(0);
+                float inputValue = row.getFloat(ruleLabel);
                 
                 if (inputValue < Float.parseFloat(ruleValue) && current.getLeftChild() != null) {
                     current = current.getLeftChild();
                 } 
                 else if (inputValue >= Float.parseFloat(ruleValue) && current.getRightChild() != null) {
                     current = current.getRightChild();
+                } else {
+                    // Broken tree, a decision node has null at one of its child nodes
+                    throw new IllegalStateException("Broken tree: a decision node has null at one of its child nodes.");
                 }
             }
 
@@ -76,7 +79,7 @@ public class RandomForestRegressor {
         if (average.isPresent()) {
             return (float) average.getAsDouble();
         } else {
-            return 0.0f;
+            throw new IllegalStateException("No predictions could be made for this row.");
         }
     }
     public float decay(int daysSinceLastLoggedIn) {
