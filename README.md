@@ -5,7 +5,6 @@ A machine learning project to predict the difficulty of questions based on vario
 ## Table of Contents
 
 - [Project Overview](#project-overview)
-- [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Dataset](#dataset)
@@ -13,12 +12,6 @@ A machine learning project to predict the difficulty of questions based on vario
 ## Project Overview
 
 The purpose of this project is for integration into my group's Capstone project. It is a learning enhancement system meant to predict how ready a student is to move on to harder questions based on current statistics gathered from their usage of the application.
-
-## Features
-
-- Predicts question difficulty
-- Supports multiple input formats
-- Easy integration with other tools
 
 ## Installation
 
