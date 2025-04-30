@@ -1,6 +1,8 @@
 package com.example;
 
-public class TreeNode {
+import java.io.Serializable;
+
+public class TreeNode implements Serializable {
     // Attributes
     private final String rule;
     private final float prediction;

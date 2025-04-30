@@ -1,5 +1,6 @@
 package com.example;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalDouble;
@@ -11,7 +12,7 @@ import smile.data.Tuple;
 import smile.data.vector.ValueVector;
 import smile.util.Index;
 
-public class RandomForestRegressor {
+public class RandomForestRegressor implements Serializable {
     // Attributes
     int nEstimator;
     int minSamples;
