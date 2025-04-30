@@ -1,5 +1,7 @@
 package com.example;
 
+import java.util.List;
+
 import smile.data.DataFrame;
 import smile.data.Row;
 import smile.io.Read;
@@ -8,7 +10,7 @@ public class Main {
     public static void main(String[] args) {
         try {
             DataFrame df = Read.csv("src/main/resources/dataset/student_statistics.csv", "header=true");
-            RandomForestRegressor model = new RandomForestRegressor(100, 5, 10);
+            RandomForestRegressor model = new RandomForestRegressor(1, 5, 10);
 
             System.out.println("Training the model...");
             model.fit(df); // Create nEstimator regression trees on this dataframe
@@ -38,6 +40,21 @@ public class Main {
                 float prediction = model.predict(row);
                 System.out.println("SCORE: " + prediction);
 
+            }
+
+            // Try saving and loading the model
+            ModelSaveAndLoad saveAndLoad = new ModelSaveAndLoad();
+            saveAndLoad.saveModel(model, "RandomForestRegressor.model");
+            RandomForestRegressor model2 = saveAndLoad.loadModel("RandomForestRegressor.model");
+            if (model2 == null) {
+                System.out.println("null model");
+            } else {
+                System.out.println("successful load of model");
+                System.out.println("Testing prediction.");
+                for (Row row : testDf) {
+                    System.out.println(row.toString());
+                    System.out.println(model2.predict(row));
+                }
             }
         } catch (java.io.IOException | java.net.URISyntaxException e) {
             System.err.println("Failed to read CSV file: " + e.getMessage());
