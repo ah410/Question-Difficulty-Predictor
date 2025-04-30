@@ -222,7 +222,7 @@ public class RandomForestRegressor {
             // If so, randomly pick a label and choose the first row as threshold
                 // Row for threshold doesn't matter since they are all the same values
         if (globalBestLabel == "" && globalBestThreshold == Float.POSITIVE_INFINITY) {
-            int randomLabelIndex = (int) Math.random() * features.length;
+            int randomLabelIndex = (int) (Math.random() * features.length);
             splitLabel = features[randomLabelIndex];
             splitThreshold = df.apply(splitLabel).getFloat(0);
         } else {
