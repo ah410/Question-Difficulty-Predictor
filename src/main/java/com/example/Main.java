@@ -9,14 +9,18 @@ import smile.io.Read;
 public class Main {
     public static void main(String[] args) {
         try {
+            // 1. Convert the CSV file to a Smile DataFrame
             DataFrame df = Read.csv("src/main/resources/dataset/student_statistics.csv", "header=true");
+
+            // 2. Create your model object from class RandomForestRegressor
             RandomForestRegressor model = new RandomForestRegressor(1, 5, 10);
 
+            // 3. Train the model on the dataset
             System.out.println("Training the model...");
             model.fit(df); // Create nEstimator regression trees on this dataframe
             System.out.println("Model finished training...");
 
-            // Create a test data set
+            // 4. Create a test dataset
             float[][] testData = {
                 {389.15f, 2f, 69.41f, 0.77f, 0.64f, 19f, 0.6891f, 7f},
                 {205.78f, 1f, 45.32f, 0.53f, 0.41f, 14f, 0.5127f, 4f},
@@ -34,6 +38,7 @@ public class Main {
             System.out.println("Test Data:");
             System.out.println(testDf.head(10));
 
+            // 5. Test the model by calling predict()
             System.out.println("Calculating predictions...");
             for (Row row : testDf) {
                 System.out.println(row.toString());
@@ -42,9 +47,11 @@ public class Main {
 
             }
 
-            // Try saving and loading the model
+            // 6. Save the model
             ModelSaveAndLoad saveAndLoad = new ModelSaveAndLoad();
             saveAndLoad.saveModel(model, "RandomForestRegressor.model");
+
+            // 7. Load the model and test its output
             RandomForestRegressor model2 = saveAndLoad.loadModel("RandomForestRegressor.model");
             if (model2 == null) {
                 System.out.println("null model");
