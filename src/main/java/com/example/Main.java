@@ -8,7 +8,7 @@ public class Main {
     public static void main(String[] args) {
         try {
             DataFrame df = Read.csv("src/main/resources/dataset/student_statistics.csv", "header=true");
-            RandomForestRegressor model = new RandomForestRegressor(50, 5, 10);
+            RandomForestRegressor model = new RandomForestRegressor(100, 5, 10);
 
             System.out.println("Training the model...");
             model.fit(df); // Create nEstimator regression trees on this dataframe
