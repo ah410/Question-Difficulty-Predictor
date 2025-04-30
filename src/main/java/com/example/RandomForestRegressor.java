@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 
 import smile.data.Collectors;
 import smile.data.DataFrame;
+import smile.data.Row;
 import smile.data.Tuple;
 import smile.data.vector.ValueVector;
 import smile.util.Index;
@@ -17,7 +18,7 @@ public class RandomForestRegressor {
     int minSamples;
     int maxDepth;
     boolean isTrained;
-    List<TreeNode> forest;
+    List<TreeNode> forest = new ArrayList<>();
 
     // Constructor
     public RandomForestRegressor(int nEstimator, int minSamples, int maxDepth) {
@@ -36,6 +37,7 @@ public class RandomForestRegressor {
         for (int i = 0; i < nEstimator; i++) {
             DataFrame bootstrappedDf = bootstrapSample(filteredDf);
             TreeNode root = createRegressionTree(bootstrappedDf, minSamples, maxDepth, 0);
+            System.out.println("Root Node for index " + i + ": " + root.getRule());
             forest.add(root);
         }
     }
@@ -127,37 +129,54 @@ public class RandomForestRegressor {
                 .sorted((row1, row2) -> Float.compare(row1.getFloat(label), row2.getFloat(label)))
                 .collect(Collectors.toDataFrame(df.schema()));
 
+            // Loop over all rows, calculating a threshold for every 2 datapoints
             for (int i = 0; i < sortedDf.nrow() - 1; i++) {
                 Tuple currentRow = sortedDf.apply(i);
                 Tuple nextRow = sortedDf.apply(i+1);
                 float currentThreshold = (currentRow.getFloat(label) + nextRow.getFloat(label)) / 2;
 
-                // select rows in a DataFrame where the value of label is < currentThreshold and >= currentThreshold
-                DataFrame lessThanDf = sortedDf.stream()
-                    .filter(row -> row.getFloat(label) < currentThreshold)
-                    .collect(Collectors.toDataFrame(df.schema()));
+                DataFrame lessThanDf;
+                DataFrame greaterThanDf;
 
-                DataFrame greaterThanDf = sortedDf.stream()
-                    .filter(row -> row.getFloat(label) >= currentThreshold)
-                    .collect(Collectors.toDataFrame((sortedDf.schema())));
+                // Edge case: If no rows are returned by the filter, an error is raised
+                try {
+                    // Grabbing all rows that fall to the left of the threshold for the current label
+                    lessThanDf = sortedDf.stream()
+                        .filter(row -> row.getFloat(label) < currentThreshold)
+                        .collect(Collectors.toDataFrame(df.schema()));
+                } catch (IllegalArgumentException e) {
+                    // No matches in the filter (rows = 0). No SSR can be calculated so continue to the next row
+                    continue;
+                }
+                try {
+                    // Grabbing all rows that fall at or to the right of the threshold for the current label
+                    greaterThanDf = sortedDf.stream()
+                        .filter(row -> row.getFloat(label) >= currentThreshold)
+                        .collect(Collectors.toDataFrame(sortedDf.schema()));
+                } catch (IllegalArgumentException e) {
+                    // No matches in the filter (rows = 0). No SSR can be calculated so continue to the next row
+                    continue;
+                }
 
-                // Grab the average target variable value for both DataFrames above
+                // Calculating average target label value for datapoints to the left of the threshold
                 ValueVector leftVals = lessThanDf.apply(targetLabel);
-                float leftAverage = 0.0f;
+                float leftAverage;
+                float leftTotal = 0.0f;
                 for (int j = 0; j < leftVals.size(); j++) {
-                    leftAverage +=  leftVals.getFloat(j);
+                    leftTotal +=  leftVals.getFloat(j);
                 }
-                ValueVector rightVals = greaterThanDf.apply(targetLabel);
-                float rightAverage = 0.0f;
-                for (int j = 0; j < rightVals.size(); j++) {
-                    rightAverage +=  rightVals.getFloat(j);
-                }
-                
-                // Handle potential for there to be 0 values to the left or right of the threshold
-                leftAverage = leftVals.size() == 0 ? 0 : leftAverage / leftVals.size();
-                rightAverage = rightVals.size() == 0 ? 0 : rightAverage / rightVals.size();
+                leftAverage = leftTotal / leftVals.size();
 
-                // Calculate the squared residual for all datapoints
+                // Calculating average target label value for datapoints to the right of the threshold
+                ValueVector rightVals = greaterThanDf.apply(targetLabel);
+                float rightAverage;
+                float rightTotal = 0.0f;
+                for (int j = 0; j < rightVals.size(); j++) {
+                    rightTotal +=  rightVals.getFloat(j);
+                }
+                rightAverage = rightTotal / rightVals.size();
+
+                // Calculate the squared residual for each datapoint
                 List<Float> leftResiduals = new ArrayList<>();
                 for (int j = 0; j < leftVals.size(); j++) {
                     float residual = (float) Math.pow(leftVals.getDouble(j) - leftAverage, 2);
@@ -194,49 +213,83 @@ public class RandomForestRegressor {
         TreeNode root = new TreeNode(String.format("%s < %f", globalBestLabel, globalBestThreshold));
 
         // 5. Filter the dataframe into rows less than and rows greater than or equal to the global threshold
-        final String splitLabel = globalBestLabel;
-        final float splitThreshold = globalBestThreshold;
+        final String splitLabel;
+        final float splitThreshold;
 
-        DataFrame lessThanDf = df.stream()
-            .filter(row -> row.getFloat(splitLabel) < splitThreshold)
-            .collect(Collectors.toDataFrame(df.schema()));
-        ValueVector lessThanVector = lessThanDf.apply(targetLabel);
-
-        DataFrame greaterThanDf = df.stream()
-            .filter(row -> row.getFloat(splitLabel) >= splitThreshold)
-            .collect(Collectors.toDataFrame(df.schema()));
-        ValueVector greaterThanVector = greaterThanDf.apply(targetLabel);
-
-        // 6. Conditionally check to crete a leaf node or continue splitting based on maxDepth and minSamples
-        if (lessThanDf.size() < minSamples || currentDepth >= maxDepth) {
-            // Average prediction
-            float averagePrediction = 0.0f;
-            for (Double val : lessThanVector.toDoubleArray()) {
-                averagePrediction += val.floatValue();
-            }
-            averagePrediction = lessThanVector.size() == 0 ? 0 : averagePrediction / lessThanVector.size();
-
-            // Create a left leaf node
-            TreeNode leftLeafNode = new TreeNode(averagePrediction);
-            root.setLeftChild(leftLeafNode);
+        // Edge case: If global best label is "" and threshold is INFINITY, each feature label had the same values for its rows
+            // Ex: correctLast3 = 0 for all rows in df, avgTime = 32.9 for all rows in df, etc.
+            // Causes the continue condition to execute, unable to calculate any SSR's, leaving the globals as default
+            // If so, randomly pick a label and choose the first row as threshold
+                // Row for threshold doesn't matter since they are all the same values
+        if (globalBestLabel == "" && globalBestThreshold == Float.POSITIVE_INFINITY) {
+            int randomLabelIndex = (int) Math.random() * features.length;
+            splitLabel = features[randomLabelIndex];
+            splitThreshold = df.apply(splitLabel).getFloat(0);
         } else {
-            // Continue splitting to create the left sub-tree
-            root.setLeftChild(createRegressionTree(lessThanDf, minSamples, maxDepth, currentDepth + 1));
+            splitLabel = globalBestLabel;
+            splitThreshold = globalBestThreshold;
         }
-        if (greaterThanDf.size() < minSamples || currentDepth >= maxDepth) {
-            // Average prediction
-            float averagePrediction = 0.0f;
-            for (Double val : greaterThanVector.toDoubleArray()) {
-                averagePrediction += val.floatValue();
-            }
-            averagePrediction = greaterThanVector.size() == 0 ? 0 : averagePrediction / greaterThanVector.size();
 
-            // Create a right leaf node
-            TreeNode rightLeafNode = new TreeNode(averagePrediction);
-            root.setRightChild(rightLeafNode);
-        } else {
-            // Continue splitting to create the right sub-tree
-            root.setRightChild(createRegressionTree(greaterThanDf, minSamples, maxDepth, currentDepth + 1));
+        // Collect df's into lists to prevent the need for a try catch block
+        List<Row> lessThanRows = df.stream()
+            .filter(row -> row.getFloat(splitLabel) < splitThreshold)
+            .collect(java.util.stream.Collectors.toList());
+        List<Row> greaterThanRows = df.stream()
+            .filter(row -> row.getFloat(splitLabel) >= splitThreshold)
+            .collect(java.util.stream.Collectors.toList());
+
+        // 6. Conditionally check to crete a leaf node or continue splitting based on the rows returned by the split, minSamples, and maxDepth
+        if (lessThanRows.size() == 0) {
+            return null;
+        }
+        else {
+            // Some rows are returned, so create the DataFrame
+            DataFrame lessThanDf = df.stream()
+                .filter(row -> row.getFloat(splitLabel) < splitThreshold)
+                .collect(Collectors.toDataFrame(df.schema()));
+            ValueVector lessThanVector = lessThanDf.apply(targetLabel);
+
+            if (lessThanRows.size() < minSamples || currentDepth >= maxDepth) {
+                // Average prediction
+                float averagePrediction = 0.0f;
+                for (Double val : lessThanVector.toDoubleArray()) {
+                    averagePrediction += val.floatValue();
+                }
+                averagePrediction = lessThanVector.size() == 0 ? 0 : averagePrediction / lessThanVector.size();
+
+                // Create a left leaf node
+                TreeNode leftLeafNode = new TreeNode(averagePrediction);
+                root.setLeftChild(leftLeafNode);
+            } else {
+                // Continue splitting to create the left sub-tree
+                root.setLeftChild(createRegressionTree(lessThanDf, minSamples, maxDepth, currentDepth + 1));
+            }
+        }
+        if (greaterThanRows.size() == 0) {
+            return null;
+        }
+        else {
+            // Some rows are returned, so create the DataFrame
+            DataFrame greaterThanDf = df.stream()
+                .filter(row -> row.getFloat(splitLabel) >= splitThreshold)
+                .collect(Collectors.toDataFrame(df.schema()));
+            ValueVector greaterThanVector = greaterThanDf.apply(targetLabel);
+
+            if (greaterThanRows.size() < minSamples || currentDepth >= maxDepth) {
+                // Average prediction
+                float averagePrediction = 0.0f;
+                for (Double val : greaterThanVector.toDoubleArray()) {
+                    averagePrediction += val.floatValue();
+                }
+                averagePrediction = greaterThanVector.size() == 0 ? 0 : averagePrediction / greaterThanVector.size();
+
+                // Create a right leaf node
+                TreeNode rightLeafNode = new TreeNode(averagePrediction);
+                root.setRightChild(rightLeafNode);
+            } else {
+                // Continue splitting to create the right sub-tree
+                root.setRightChild(createRegressionTree(greaterThanDf, minSamples, maxDepth, currentDepth + 1));
+            }
         }
 
         // Return the root node
