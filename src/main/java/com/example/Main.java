@@ -1,7 +1,5 @@
 package com.example;
 
-import java.util.List;
-
 import smile.data.DataFrame;
 import smile.data.Row;
 import smile.io.Read;
