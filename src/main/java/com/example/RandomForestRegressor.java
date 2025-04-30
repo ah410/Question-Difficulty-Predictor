@@ -208,27 +208,32 @@ public class RandomForestRegressor {
             }
         }
 
-        // 4. Now, the best candidate is chose for the root node. 
-        // Create the root node, passing in a string containing the global best label and its threshold to the rule
-        TreeNode root = new TreeNode(String.format("%s < %f", globalBestLabel, globalBestThreshold));
-
-        // 5. Filter the dataframe into rows less than and rows greater than or equal to the global threshold
+        // 5. Create variables to store the split for this DataFrame
         final String splitLabel;
         final float splitThreshold;
 
-        // Edge case: If global best label is "" and threshold is INFINITY, each feature label had the same values for its rows
+        // 6. Edge case: If global best label is "" and threshold is INFINITY, each feature label has the same values for its rows
             // Ex: correctLast3 = 0 for all rows in df, avgTime = 32.9 for all rows in df, etc.
             // Causes the continue condition to execute, unable to calculate any SSR's, leaving the globals as default
-            // If so, randomly pick a label and choose the first row as threshold
-                // Row for threshold doesn't matter since they are all the same values
+            // If so, calculate the average prediction for all rows and return as a node
+            // Else, set the splitLabel and splitThreshold accordingly
         if (globalBestLabel == "" && globalBestThreshold == Float.POSITIVE_INFINITY) {
-            int randomLabelIndex = (int) (Math.random() * features.length);
-            splitLabel = features[randomLabelIndex];
-            splitThreshold = df.apply(splitLabel).getFloat(0);
+            // No threshold to split, so set both left and right childs as the average prediction
+            float averagePrediction;
+            float total = 0.0f;
+            for (Double val : df.apply(targetLabel).toDoubleArray()) {
+                total += val;
+            }
+            averagePrediction = total / df.size();
+            return new TreeNode(averagePrediction);
         } else {
             splitLabel = globalBestLabel;
             splitThreshold = globalBestThreshold;
         }
+
+        // 7. Now, the best candidate is chose for the root node. 
+        // Create the root node, passing in a string containing the global best label and its threshold to the rule
+        TreeNode root = new TreeNode(String.format("%s < %f", globalBestLabel, globalBestThreshold));
 
         // Collect df's into lists to prevent the need for a try catch block
         List<Row> lessThanRows = df.stream()
@@ -238,9 +243,9 @@ public class RandomForestRegressor {
             .filter(row -> row.getFloat(splitLabel) >= splitThreshold)
             .collect(java.util.stream.Collectors.toList());
 
-        // 6. Conditionally check to crete a leaf node or continue splitting based on the rows returned by the split, minSamples, and maxDepth
+        // 8. Conditionally check to crete a leaf node or continue splitting based on the rows returned by the split, minSamples, and maxDepth
         if (lessThanRows.size() == 0) {
-            return null;
+            root.setLeftChild(null);
         }
         else {
             // Some rows are returned, so create the DataFrame
@@ -266,7 +271,7 @@ public class RandomForestRegressor {
             }
         }
         if (greaterThanRows.size() == 0) {
-            return null;
+            root.setRightChild(null);
         }
         else {
             // Some rows are returned, so create the DataFrame
