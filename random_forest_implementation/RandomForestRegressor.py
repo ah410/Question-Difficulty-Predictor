@@ -35,7 +35,8 @@ class RandomForestRegressor2:
         # 3. Sum the predicted scores in the list and divide by n_estimators
         # 4. Return the value obtained in step 3
         predicted_scores = []
-        for i, tree_node in enumerate(self.forest):
+
+        for _, tree_node in enumerate(self.forest):
             current_node = tree_node
 
             # Continue exploring the tree until you've reached an empty rule (leaf node)
