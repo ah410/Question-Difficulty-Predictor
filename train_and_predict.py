@@ -31,4 +31,4 @@ def train_and_predict(student_dataset, implementation_type):
     ]
 
     # Run the predictions
-    difficulty_model.listen_for_training(columns, test_stats)
+    difficulty_model.predict_score(columns, test_stats)

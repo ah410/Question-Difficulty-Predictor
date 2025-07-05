@@ -10,7 +10,6 @@ Includes:
 """
 
 import math
-import time
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from random_forest_implementation.RandomForestRegressor import RandomForestRegressor2
@@ -72,30 +71,36 @@ class DifficultyModel():
         except ValueError as e:
             print(f'Invalid input: {e}')
 
-    def predict_score(self, input, last_logged_in):
+    def predict_score(self, columns, test_stats):
         """
         A prediction function.
 
-        This function calls both the decay function to grab the rate of decay and the predicted score
-        from the model based on user provided input to output a final score that signifies how ready a
-        user is for the next jump in question difficulty. The decay rate is multipled by the model's
-        predicted score from the input.
+        This function calls both the decay and predict function from the model based on user 
+        provided input to output a final score that signifies how ready a user is for the next 
+        jump in question difficulty. The decay rate is multipled by the model's predicted 
+        score from the input.
 
         Parameters
         ----------
-        input : pandas.DataFrame
-            Expects 5 columns that signify values of 
-            [correctLast3, avgTime, confidence, quizScore, sessions] where each column has data values for
-            [number of last 3 question that were correct, average time on each question in seconds,
-            confidence value between 0.00-1.00, quiz score of the last quiz between 0.00-1.00, total
-            number of sessions taken].
-        """
-        decay_rate = self.decay(last_logged_in)
-        model_score = self.model.predict(input)
-        
-        print(f'decay rate: {decay_rate} | model score: {model_score}', end='')
+        columns : list[str]
+            In this order, 
+            expects ['correctLast3', 'avgTime', 'confidence', 'quizScore', 'sessions', 'lastLoggedIn']
 
-        return model_score * decay_rate
+        test_stats : list[list[float]] 
+            Each row in the 2-D Array contains 6 columns following the columns data values.
+            The last colulmn contians the number of days since last login, which is expected to come 
+            from some type of database that gets updated every time a user los into the application.
+        """
+        for row in test_stats:
+            last_logged_in = row[-1]
+            x_input = pd.DataFrame([row], columns=columns).drop(columns=['lastLoggedIn'])
+            
+            decay_rate = self.decay(last_logged_in)
+            model_score = self.model.predict(x_input)
+
+            print(f'decay rate: {decay_rate} | model score: {model_score}', end='')
+            print(f'predicted score: {decay_rate * model_score} | input row: {row}\n')
+
 
     def get_difficulty(self, predicted_score):
         """
@@ -121,34 +126,3 @@ class DifficultyModel():
                 return 'hard'
         except ValueError as e:
             print(f'Invalid predicted score: {e}')
-
-    def listen_for_training(self, columns, test_stats):
-        """
-        A listener function.
-
-        This function listens first for the result of the model being trained. Once done with training,
-        the function will predict a score for every row of inputs. The result will be shown in the 
-        terminal. More relevant for larger datasets. 
-
-        Parameters
-        ----------
-        columns : list[str]
-            In this order, expects 
-            ['correctLast3', 'avgTime', 'confidence', 'quizScore', 'sessions', 'lastLoggedIn'].
-        
-        inptus : list[list[float]]
-            Each row in the 2-D Array contains 6 columns following the columns data values.
-            The last column contains the number of days since last login, which is expected to come
-            from some type of database that gets updated every time a user logs into the application.
-        """
-        while not self.training_done:
-            print('Model still training...')
-            time.sleep(1)
-        
-        for row in test_stats:
-            last_logged_in = row[-1]
-            x_input = pd.DataFrame([row], columns=columns).drop(columns=['lastLoggedIn'])
-
-            predicted_score = self.predict_score(x_input, last_logged_in)
-
-            print(f' | predicted score: {predicted_score} | input_row: {row}\n')
