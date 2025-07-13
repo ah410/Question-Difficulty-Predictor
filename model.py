@@ -12,7 +12,7 @@ Includes:
 import math
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
-from random_forest_implementation.RandomForestRegressor import RandomForestRegressor2
+from randomforestregression.random_forest_regression import RandomForestRegressor2
 
 class DifficultyModel():
     def __init__(self, implementation_type):
